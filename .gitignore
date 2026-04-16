@@ -18,6 +18,17 @@ Thumbs.db
 # Logs and temp files
 *.log
 *.tmp
-aftman.toml
-default.project.json
-README.md
+
+# Ignore local editor and OS files
+.claude/
+
+# Ignore Python cache and bytecode (if any)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore node dependencies (if any)
+node_modules/
+
+# Ignore temporary and backup files
+*~
