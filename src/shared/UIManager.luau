@@ -3,6 +3,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local GameState = require(game.ReplicatedStorage.Shared.GameState)
 
 local UIManager = {}
 
@@ -70,19 +71,6 @@ function UIManager.createUI()
 	apprLabel.TextScaled = true
 	apprLabel.Parent = hudFrame
 
-	-- Settings Button
-	local settingsButton = Instance.new("TextButton")
-	settingsButton.Name = "Settings"
-	settingsButton.Size = UDim2.new(0.1, 0, 0.8, 0)
-	settingsButton.Position = UDim2.new(0.9, 0, 0.1, 0)
-	settingsButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-	settingsButton.Text = "Settings"
-	settingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	settingsButton.Parent = hudFrame
-
-	settingsButton.MouseButton1Click:Connect(function()
-		print("Settings button clicked")
-	nationPanel.Visible = true
 	-- Nation Management Panel (hidden by default)
 	local nationPanel = Instance.new("Frame")
 	nationPanel.Name = "NationPanel"
@@ -126,8 +114,6 @@ function UIManager.createUI()
 		billButton.Parent = nationPanel
 
 		billButton.MouseButton1Click:Connect(function()
-			-- Start bill (send to server)
-			local ReplicatedStorage = game:GetService("ReplicatedStorage")
 			local startBillEvent = ReplicatedStorage:FindFirstChild("StartBill") or Instance.new("RemoteEvent")
 			startBillEvent.Name = "StartBill"
 			startBillEvent.Parent = ReplicatedStorage
@@ -138,7 +124,20 @@ function UIManager.createUI()
 		yPos = yPos + 0.12
 	end
 
-	-- Add more elements as needed
+	-- Settings Button
+	local settingsButton = Instance.new("TextButton")
+	settingsButton.Name = "Settings"
+	settingsButton.Size = UDim2.new(0.1, 0, 0.8, 0)
+	settingsButton.Position = UDim2.new(0.9, 0, 0.1, 0)
+	settingsButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+	settingsButton.Text = "Settings"
+	settingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	settingsButton.Parent = hudFrame
+
+	settingsButton.MouseButton1Click:Connect(function()
+		print("Settings button clicked")
+		nationPanel.Visible = true
+	end)
 
 	return screenGui
 end
@@ -157,7 +156,6 @@ function UIManager.updateStats(countries, player, year)
 				hud.Immigration.Text = "Immigration: " .. country.Immigration
 				hud.Approval.Text = "Approval: " .. country.Approval .. "%"
 			end
-			-- Update year if needed
 		end
 	end
 end

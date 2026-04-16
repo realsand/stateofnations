@@ -1,34 +1,20 @@
-# Project place file
-/State of Nations.rbxlx
-
-# Roblox Studio lock files
-/*.rbxlx.lock
-/*.rbxl.lock
-
-# Sourcemap
-sourcemap.json
-
-# VS Code settings
+# Ignore local editor and OS files
 .vscode/
-
-# OS-specific files
+.claude/
 .DS_Store
 Thumbs.db
 
-# Logs and temp files
-*.log
-*.tmp
-
-# Ignore local editor and OS files
-.claude/
-
-# Ignore Python cache and bytecode (if any)
+# Ignore Python cache and bytecode
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Ignore node dependencies (if any)
+# Ignore node dependencies
 node_modules/
 
 # Ignore temporary and backup files
+*.log
+*.tmp
 *~
+rojo.cmd
+aftman.toml
