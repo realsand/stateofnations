@@ -1,8 +1,8 @@
 -- Server initialization script
 -- Orchestrates all server-side systems
 
-local RemoteEvents = require(script.Parent.systems.RemoteEvents)
-local GameSimulation = require(script.Parent.systems.GameSimulation)
+local RemoteEvents = require(script.systems.RemoteEvents)
+local GameSimulation = require(script.systems.GameSimulation)
 
 print("🖥️  Server initialized - State of Nations")
 

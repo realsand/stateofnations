@@ -11,9 +11,6 @@ local UIController = {}
 function UIController.initialize()
 	print("🎮 State of Nations loaded!")
 	
-	-- Create the UI
-	UIManager.createUI()
-	
 	-- Connect to server events
 	local UpdateEvent = ReplicatedStorage:WaitForChild("UpdateStats")
 	local BillEvent = ReplicatedStorage:WaitForChild("BillComplete")
