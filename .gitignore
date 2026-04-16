@@ -1,0 +1,23 @@
+# Project place file
+/State of Nations.rbxlx
+
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+# Sourcemap
+sourcemap.json
+
+# VS Code settings
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs and temp files
+*.log
+*.tmp
+aftman.toml
+default.project.json
+README.md
