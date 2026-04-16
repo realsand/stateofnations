@@ -1,9 +1,17 @@
 print("Hello world, from client!")
 
-local UIManager = require(script.Parent.UIManager)
+local UIManager = require(game.ReplicatedStorage.Shared.UIManager)
+local GameState = require(game.ReplicatedStorage.Shared.GameState)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Create the UI
 UIManager.createUI()
 
--- Example: Update stats (replace with actual game logic)
-UIManager.updateStats(100, 5000, 75)
+-- Connect to update event
+local updateEvent = ReplicatedStorage:WaitForChild("UpdateStats")
+updateEvent.OnClientEvent:Connect(function(countries, player, year)
+	UIManager.updateStats(countries, player, year)
+end)
+
+-- Initial update
+UIManager.updateStats(GameState.Countries, GameState.Player, GameState.CurrentYear)
