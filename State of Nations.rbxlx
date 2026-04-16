@@ -1,0 +1,561 @@
+<roblox version="4">
+  <Item class="Lighting" referent="0">
+    <Properties>
+      <string name="Name">Lighting</string>
+      <Color3 name="Ambient">
+        <R>0</R>
+        <G>0</G>
+        <B>0</B>
+      </Color3>
+      <float name="Brightness">2</float>
+      <bool name="GlobalShadows">true</bool>
+      <bool name="Outlines">false</bool>
+      <token name="Technology">1</token>
+    </Properties>
+  </Item>
+  <Item class="ReplicatedStorage" referent="1">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="2">
+      <Properties>
+        <string name="Name">Shared</string>
+      </Properties>
+      <Item class="ModuleScript" referent="3">
+        <Properties>
+          <string name="Name">GameState</string>
+          <string name="Source">-- GameState.luau
+-- Shared game state for State of Nations
+
+local GameState = {}
+
+-- Define countries
+GameState.Countries = {
+    ["USA"] = {
+        GDP = 1000,  -- in billions
+        Unemployment = 5,  -- percentage
+        Immigration = 10,  -- rate
+        Approval = 50,  -- percentage
+    },
+    ["China"] = {
+        GDP = 1500,
+        Unemployment = 3,
+        Immigration = 5,
+        Approval = 60,
+    },
+    ["Russia"] = {
+        GDP = 500,
+        Unemployment = 7,
+        Immigration = 2,
+        Approval = 40,
+    },
+}
+
+-- Player data (for prototype, assume one player controls USA)
+GameState.Player = {
+    Country = "USA",
+    Approval = 50,
+    BillsPassed = 0,
+}
+
+-- Active bill
+GameState.ActiveBill = nil  -- {type, startTime, duration}
+
+-- Time
+GameState.CurrentYear = 2024
+GameState.YearDuration = 10  -- 10 seconds for testing, normally 8*60
+
+-- Bill types
+GameState.BillTypes = {
+    ["Increase Taxes"] = {GDP = 100, Approval = -10, duration = 1},  -- 1 year
+    ["Immigration Reform"] = {Immigration = 5, Unemployment = -2, duration = 1},
+    ["Welfare Program"] = {Unemployment = -3, GDP = -50, Approval = 5, duration = 1},
+}
+
+return GameState</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="4">
+        <Properties>
+          <string name="Name">Hello</string>
+          <string name="Source"><![CDATA[return function()
+	print("Hello, world!")
+end
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="5">
+        <Properties>
+          <string name="Name">UIManager</string>
+          <string name="Source"><![CDATA[-- UIManager.luau
+-- Manages the in-game UI for State of Nations
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local GameState = require(game.ReplicatedStorage.Shared.GameState)
+
+local UIManager = {}
+
+-- Create the main UI
+function UIManager.createUI()
+	local player = Players.LocalPlayer
+	local playerGui = player:WaitForChild("PlayerGui")
+
+	-- Main ScreenGui
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "NationUI"
+	screenGui.ResetOnSpawn = false
+	screenGui.Parent = playerGui
+
+	-- HUD Frame
+	local hudFrame = Instance.new("Frame")
+	hudFrame.Name = "HUD"
+	hudFrame.Size = UDim2.new(1, 0, 0.1, 0)
+	hudFrame.Position = UDim2.new(0, 0, 0.9, 0)
+	hudFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	hudFrame.BackgroundTransparency = 0.5
+	hudFrame.Parent = screenGui
+
+	-- GDP Label
+	local gdpLabel = Instance.new("TextLabel")
+	gdpLabel.Name = "GDP"
+	gdpLabel.Size = UDim2.new(0.2, 0, 1, 0)
+	gdpLabel.Position = UDim2.new(0, 0, 0, 0)
+	gdpLabel.BackgroundTransparency = 1
+	gdpLabel.Text = "GDP: $0B"
+	gdpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	gdpLabel.TextScaled = true
+	gdpLabel.Parent = hudFrame
+
+	-- Unemployment Label
+	local unempLabel = Instance.new("TextLabel")
+	unempLabel.Name = "Unemployment"
+	unempLabel.Size = UDim2.new(0.2, 0, 1, 0)
+	unempLabel.Position = UDim2.new(0.2, 0, 0, 0)
+	unempLabel.BackgroundTransparency = 1
+	unempLabel.Text = "Unemployment: 0%"
+	unempLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+	unempLabel.TextScaled = true
+	unempLabel.Parent = hudFrame
+
+	-- Immigration Label
+	local immLabel = Instance.new("TextLabel")
+	immLabel.Name = "Immigration"
+	immLabel.Size = UDim2.new(0.2, 0, 1, 0)
+	immLabel.Position = UDim2.new(0.4, 0, 0, 0)
+	immLabel.BackgroundTransparency = 1
+	immLabel.Text = "Immigration: 0"
+	immLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+	immLabel.TextScaled = true
+	immLabel.Parent = hudFrame
+
+	-- Approval Label
+	local apprLabel = Instance.new("TextLabel")
+	apprLabel.Name = "Approval"
+	apprLabel.Size = UDim2.new(0.2, 0, 1, 0)
+	apprLabel.Position = UDim2.new(0.6, 0, 0, 0)
+	apprLabel.BackgroundTransparency = 1
+	apprLabel.Text = "Approval: 0%"
+	apprLabel.TextColor3 = Color3.fromRGB(0, 0, 255)
+	apprLabel.TextScaled = true
+	apprLabel.Parent = hudFrame
+
+	-- Nation Management Panel (hidden by default)
+	local nationPanel = Instance.new("Frame")
+	nationPanel.Name = "NationPanel"
+	nationPanel.Size = UDim2.new(0.5, 0, 0.5, 0)
+	nationPanel.Position = UDim2.new(0.25, 0, 0.25, 0)
+	nationPanel.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+	nationPanel.BackgroundTransparency = 0.2
+	nationPanel.Visible = false
+	nationPanel.Parent = screenGui
+
+	local panelTitle = Instance.new("TextLabel")
+	panelTitle.Size = UDim2.new(1, 0, 0.1, 0)
+	panelTitle.BackgroundTransparency = 1
+	panelTitle.Text = "Nation Management"
+	panelTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	panelTitle.TextScaled = true
+	panelTitle.Parent = nationPanel
+
+	-- Close Button
+	local closeButton = Instance.new("TextButton")
+	closeButton.Size = UDim2.new(0.1, 0, 0.1, 0)
+	closeButton.Position = UDim2.new(0.9, 0, 0, 0)
+	closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+	closeButton.Text = "X"
+	closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeButton.Parent = nationPanel
+
+	closeButton.MouseButton1Click:Connect(function()
+		nationPanel.Visible = false
+	end)
+
+	-- Bill buttons
+	local yPos = 0.2
+	for billType, effects in pairs(GameState.BillTypes) do
+		local billButton = Instance.new("TextButton")
+		billButton.Size = UDim2.new(0.8, 0, 0.1, 0)
+		billButton.Position = UDim2.new(0.1, 0, yPos, 0)
+		billButton.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+		billButton.Text = billType
+		billButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+		billButton.Parent = nationPanel
+
+		billButton.MouseButton1Click:Connect(function()
+			local startBillEvent = ReplicatedStorage:FindFirstChild("StartBill") or Instance.new("RemoteEvent")
+			startBillEvent.Name = "StartBill"
+			startBillEvent.Parent = ReplicatedStorage
+			startBillEvent:FireServer(billType)
+			nationPanel.Visible = false
+		end)
+
+		yPos = yPos + 0.12
+	end
+
+	-- Settings Button
+	local settingsButton = Instance.new("TextButton")
+	settingsButton.Name = "Settings"
+	settingsButton.Size = UDim2.new(0.1, 0, 0.8, 0)
+	settingsButton.Position = UDim2.new(0.9, 0, 0.1, 0)
+	settingsButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+	settingsButton.Text = "Settings"
+	settingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	settingsButton.Parent = hudFrame
+
+	settingsButton.MouseButton1Click:Connect(function()
+		print("Settings button clicked")
+		nationPanel.Visible = true
+	end)
+
+	return screenGui
+end
+
+-- Update UI values (call this from server or local scripts)
+function UIManager.updateStats(countries, player, year)
+	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+	local nationUI = playerGui:FindFirstChild("NationUI")
+	if nationUI then
+		local hud = nationUI:FindFirstChild("HUD")
+		if hud then
+			local country = countries[player.Country]
+			if country then
+				hud.GDP.Text = "GDP: $" .. country.GDP .. "B"
+				hud.Unemployment.Text = "Unemployment: " .. country.Unemployment .. "%"
+				hud.Immigration.Text = "Immigration: " .. country.Immigration
+				hud.Approval.Text = "Approval: " .. country.Approval .. "%"
+			end
+		end
+	end
+end
+
+return UIManager
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="6">
+        <Properties>
+          <string name="Name">components</string>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="7">
+        <Properties>
+          <string name="Name">modules</string>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="8">
+        <Properties>
+          <string name="Name">util</string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="9">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Script" referent="10">
+      <Properties>
+        <string name="Name">Server</string>
+        <token name="RunContext">0</token>
+        <string name="Source"><![CDATA[-- Server initialization script
+-- Orchestrates all server-side systems
+
+local RemoteEvents = require(script.Parent.systems.RemoteEvents)
+local GameSimulation = require(script.Parent.systems.GameSimulation)
+
+print("🖥️  Server initialized - State of Nations")
+
+-- Setup all remote events
+RemoteEvents.setup()
+
+-- Start the game simulation
+GameSimulation.start()
+]]></string>
+      </Properties>
+      <Item class="Folder" referent="11">
+        <Properties>
+          <string name="Name">modules</string>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="12">
+        <Properties>
+          <string name="Name">systems</string>
+        </Properties>
+        <Item class="ModuleScript" referent="13">
+          <Properties>
+            <string name="Name">GameSimulation</string>
+            <string name="Source">-- GameSimulation.luau
+-- Handles the core game simulation: stats updates, bills, elections
+
+local GameState = require(game.ReplicatedStorage.Shared.GameState)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local GameSimulation = {}
+
+-- Update country statistics each year
+local function updateStats()
+	for country, stats in pairs(GameState.Countries) do
+		stats.GDP = stats.GDP + math.random(-50, 50)
+		stats.Unemployment = math.max(0, math.min(100, stats.Unemployment + math.random(-2, 2)))
+		stats.Immigration = math.max(0, stats.Immigration + math.random(-1, 1))
+		stats.Approval = math.max(0, math.min(100, stats.Approval + math.random(-5, 5)))
+	end
+end
+
+-- Process active bills and apply effects
+local function processBill()
+	if GameState.ActiveBill then
+		local elapsed = os.time() - GameState.ActiveBill.startTime
+		if elapsed &gt;= GameState.ActiveBill.duration * GameState.YearDuration then
+			local country = GameState.Countries[GameState.Player.Country]
+			for stat, change in pairs(GameState.ActiveBill.effects) do
+				if country[stat] then
+					country[stat] = math.max(0, math.min(100, country[stat] + change))
+				end
+			end
+			GameState.Player.BillsPassed = GameState.Player.BillsPassed + 1
+			print("✓ Bill passed: " .. GameState.ActiveBill.type)
+			
+			local BillCompleteEvent = ReplicatedStorage:FindFirstChild("BillComplete")
+			if BillCompleteEvent then
+				BillCompleteEvent:FireAllClients("BILL_PASSED", GameState.ActiveBill.type)
+			end
+			GameState.ActiveBill = nil
+		end
+	end
+end
+
+-- Check for elections every 4 years
+local function checkElection()
+	if GameState.CurrentYear % 4 == 0 then
+		local approval = GameState.Countries[GameState.Player.Country].Approval
+		local result = "CLOSE_ELECTION"
+		if approval &gt; 60 then
+			result = "LANDSLIDE_VICTORY"
+		elseif approval &lt; 40 then
+			result = "DEFEAT"
+		end
+		print("🗳️ Election: " .. result .. " (Approval: " .. math.floor(approval) .. "%)")
+		
+		local BillCompleteEvent = ReplicatedStorage:FindFirstChild("BillComplete")
+		if BillCompleteEvent then
+			BillCompleteEvent:FireAllClients("ELECTION_HELD", result, approval)
+		end
+	end
+end
+
+-- Main simulation loop
+function GameSimulation.start()
+	local UpdateEvent = ReplicatedStorage:WaitForChild("UpdateStats")
+	
+	while true do
+		wait(GameState.YearDuration)
+		GameState.CurrentYear = GameState.CurrentYear + 1
+		updateStats()
+		processBill()
+		checkElection()
+		UpdateEvent:FireAllClients(GameState.Countries, GameState.Player, GameState.CurrentYear)
+	end
+end
+
+return GameSimulation</string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="14">
+          <Properties>
+            <string name="Name">RemoteEvents</string>
+            <string name="Source">-- RemoteEvents.luau
+-- Manages all RemoteEvents for server-client communication
+
+local GameState = require(game.ReplicatedStorage.Shared.GameState)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local RemoteEvents = {}
+
+function RemoteEvents.setup()
+	-- CreateUpdateStats event for broadcasting stat updates
+	local UpdateEvent = Instance.new("RemoteEvent")
+	UpdateEvent.Name = "UpdateStats"
+	UpdateEvent.Parent = ReplicatedStorage
+
+	-- Create StartBill event for bill submission
+	local StartBillEvent = Instance.new("RemoteEvent")
+	StartBillEvent.Name = "StartBill"
+	StartBillEvent.Parent = ReplicatedStorage
+
+	-- Create BillComplete event for game notifications
+	local BillCompleteEvent = Instance.new("RemoteEvent")
+	BillCompleteEvent.Name = "BillComplete"
+	BillCompleteEvent.Parent = ReplicatedStorage
+
+	-- Handle bill submission from clients
+	StartBillEvent.OnServerEvent:Connect(function(player, billType)
+		if not GameState.ActiveBill and GameState.BillTypes[billType] then
+			GameState.ActiveBill = {
+				type = billType,
+				effects = GameState.BillTypes[billType],
+				startTime = os.time(),
+				duration = GameState.BillTypes[billType].duration
+			}
+			print("📋 Bill enacted: " .. billType)
+			BillCompleteEvent:FireAllClients("BILL_STARTED", billType)
+		else
+			print("✗ Cannot start bill - one already active")
+		end
+	end)
+
+	return UpdateEvent, StartBillEvent, BillCompleteEvent
+end
+
+return RemoteEvents</string>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Folder" referent="15">
+        <Properties>
+          <string name="Name">util</string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="SoundService" referent="16">
+    <Properties>
+      <string name="Name">SoundService</string>
+      <bool name="RespectFilteringEnabled">true</bool>
+    </Properties>
+  </Item>
+  <Item class="StarterPlayer" referent="17">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+    </Properties>
+    <Item class="StarterPlayerScripts" referent="18">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="LocalScript" referent="19">
+        <Properties>
+          <string name="Name">Client</string>
+          <string name="Source"><![CDATA[-- Client initialization script
+-- Orchestrates all client-side systems
+
+local UIController = require(script.Parent.modules.UIController)
+
+-- Initialize the UI and connect to server events
+UIController.initialize()
+]]></string>
+        </Properties>
+        <Item class="Folder" referent="20">
+          <Properties>
+            <string name="Name">components</string>
+          </Properties>
+        </Item>
+        <Item class="Folder" referent="21">
+          <Properties>
+            <string name="Name">modules</string>
+          </Properties>
+          <Item class="ModuleScript" referent="22">
+            <Properties>
+              <string name="Name">UIController</string>
+              <string name="Source">-- UIController.luau
+-- Client-side UI management and updates
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UIManager = require(ReplicatedStorage.Shared.UIManager)
+local GameState = require(ReplicatedStorage.Shared.GameState)
+
+local UIController = {}
+
+function UIController.initialize()
+	print("🎮 State of Nations loaded!")
+	
+	-- Create the UI
+	UIManager.createUI()
+	
+	-- Connect to server events
+	local UpdateEvent = ReplicatedStorage:WaitForChild("UpdateStats")
+	local BillEvent = ReplicatedStorage:WaitForChild("BillComplete")
+	
+	-- Handle stat updates from server
+	UpdateEvent.OnClientEvent:Connect(function(countries, player, year)
+		UIManager.updateStats(countries, player, year)
+	end)
+	
+	-- Handle game events from server
+	BillEvent.OnClientEvent:Connect(function(eventType, ...)
+		if eventType == "BILL_STARTED" then
+			local billName = select(1, ...)
+			print("📋 Bill enacted: " .. billName)
+		elseif eventType == "BILL_PASSED" then
+			local billName = select(1, ...)
+			print("✓ Bill passed: " .. billName)
+		elseif eventType == "ELECTION_HELD" then
+			local result = select(1, ...)
+			local approval = select(2, ...)
+			print("🗳️ Election: " .. result .. " (Approval: " .. math.floor(approval) .. "%)")
+		end
+	end)
+	
+	-- Send initial update
+	UIManager.updateStats(GameState.Countries, GameState.Player, GameState.CurrentYear)
+end
+
+return UIController</string>
+            </Properties>
+          </Item>
+        </Item>
+        <Item class="Folder" referent="23">
+          <Properties>
+            <string name="Name">util</string>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Workspace" referent="24">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <bool name="FilteringEnabled">true</bool>
+      <bool name="NeedsPivotMigration">false</bool>
+    </Properties>
+    <Item class="Part" referent="25">
+      <Properties>
+        <string name="Name">Baseplate</string>
+        <bool name="Anchored">true</bool>
+        <Color3uint8 name="Color3uint8">6512483</Color3uint8>
+        <bool name="Locked">true</bool>
+        <Vector3 name="Position">
+          <X>0</X>
+          <Y>-10</Y>
+          <Z>0</Z>
+        </Vector3>
+        <Vector3 name="size">
+          <X>512</X>
+          <Y>20</Y>
+          <Z>512</Z>
+        </Vector3>
+      </Properties>
+    </Item>
+  </Item>
+</roblox>
